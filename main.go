@@ -1,7 +1,8 @@
 package main
 
 import (
-	"fmt"
+	"log"
+	"net/http"
 	"os"
 
 	"github.com/joho/godotenv"
@@ -16,7 +17,12 @@ func main() {
 
 	err := godotenv.Load()
 	if err != nil {
-		fmt.Println("Couldn't find a .env file, assuming default has been set")
+		log.Fatal("Couldn't find a .env file, assuming default has been set")
+	}
+
+	port := os.Getenv("PORT")
+	if port == "" {
+		log.Fatal("PORT envrionment variable was not set")
 	}
 
 	apiCfg := apiConfig{
@@ -24,16 +30,15 @@ func main() {
 		MemosURL:    os.Getenv("MEMOS_URL"),
 	}
 
-	testMemo := MemosPayload{
-		Content:    "testing",
-		State:      "NORMAL",
-		Visibility: "PROTECTED",
+	mux := http.NewServeMux()
+	mux.HandleFunc("POST /strava-webhook", apiCfg.handlerOk)
+	mux.HandleFunc("GET /strava-webhook", apiCfg.handlerOk)
+
+	srv := &http.Server{
+		Addr:    ":" + port,
+		Handler: mux,
 	}
 
-	err = apiCfg.PostMemo(testMemo)
-	if err != nil {
-		fmt.Println("Couldn't post memo:", err)
-		return
-	}
-
+	log.Printf("Serving and listening on port %s", port)
+	log.Fatal(srv.ListenAndServe())
 }

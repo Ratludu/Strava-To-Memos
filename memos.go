@@ -47,5 +47,4 @@ func (cfg *apiConfig) PostMemo(payload MemosPayload) error {
 	}
 
 	return nil
-
 }
