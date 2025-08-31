@@ -9,8 +9,9 @@ import (
 )
 
 type apiConfig struct {
-	MemosApiKey string
-	MemosURL    string
+	MemosApiKey       string
+	MemosURL          string
+	StravaVerifyToken string
 }
 
 func main() {
@@ -26,13 +27,14 @@ func main() {
 	}
 
 	apiCfg := apiConfig{
-		MemosApiKey: os.Getenv("MEMOS_API"),
-		MemosURL:    os.Getenv("MEMOS_URL"),
+		MemosApiKey:       os.Getenv("MEMOS_API"),
+		MemosURL:          os.Getenv("MEMOS_URL"),
+		StravaVerifyToken: os.Getenv("VERIFY_TOKEN"),
 	}
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /strava-webhook", apiCfg.handlerOk)
-	mux.HandleFunc("GET /strava-webhook", apiCfg.handlerOk)
+	mux.HandleFunc("GET /strava-webhook", apiCfg.handlerStravaVerify)
 
 	srv := &http.Server{
 		Addr:    ":" + port,

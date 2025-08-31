@@ -30,5 +30,14 @@ func (cfg apiConfig) handlerOk(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	payload := MemosPayload{
+		State:      "NORMAL",
+		Content:    event.ObjectType,
+		Visibility: "PROTECTED",
+	}
+
+	go cfg.PostMemo(payload)
+
+	log.Println("Responding with OK")
 	w.WriteHeader(http.StatusOK)
 }

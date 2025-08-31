@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
 )
@@ -12,4 +13,14 @@ func (cfg *apiConfig) handlerStravaVerify(w http.ResponseWriter, r *http.Request
 	challenge := query.Get("hub.challenge")
 	verifyToken := query.Get("hub.verify_token")
 
+	if verifyToken != cfg.StravaVerifyToken {
+		http.Error(w, "Verification failed", http.StatusUnauthorized)
+		log.Println("Webhook verification failed")
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	params := map[string]string{"hub.challenge": challenge}
+	json.NewEncoder(w).Encode(params)
+	log.Println("Webhook verification successful")
 }
