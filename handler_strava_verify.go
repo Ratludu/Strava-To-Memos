@@ -20,6 +20,8 @@ func (cfg *apiConfig) handlerStravaVerify(w http.ResponseWriter, r *http.Request
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
 	params := map[string]string{"hub.challenge": challenge}
 	json.NewEncoder(w).Encode(params)
 	log.Println("Webhook verification successful")

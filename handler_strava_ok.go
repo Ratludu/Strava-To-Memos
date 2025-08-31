@@ -22,10 +22,11 @@ func (cfg apiConfig) handlerOk(w http.ResponseWriter, r *http.Request) {
 
 	var event WebhookEvent
 
+	log.Println("Received POST request on /strava-webhook")
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&event)
 	if err != nil {
-		log.Fatal("Could not decode request body")
+		log.Printf("Could not decode request body: %v", err)
 		http.Error(w, "Invalid request payload", http.StatusBadRequest)
 		return
 	}

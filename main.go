@@ -18,7 +18,7 @@ func main() {
 
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatal("Couldn't find a .env file, assuming default has been set")
+		log.Println("Couldn't find a .env file, assuming default has been set")
 	}
 
 	port := os.Getenv("PORT")
