@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 )
@@ -31,9 +32,11 @@ func (cfg apiConfig) handlerOk(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	returnString := fmt.Sprintf("This is new activity! (or updated one)\n ObjectID: %d \n ObjectType: %s", event.ObjectID, event.ObjectType)
+
 	payload := MemosPayload{
 		State:      "NORMAL",
-		Content:    event.ObjectType,
+		Content:    returnString,
 		Visibility: "PROTECTED",
 	}
 

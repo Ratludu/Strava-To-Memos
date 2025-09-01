@@ -9,8 +9,14 @@ import (
 )
 
 type apiConfig struct {
-	MemosApiKey       string
-	MemosURL          string
+	// Memos
+	MemosApiKey string
+	MemosURL    string
+	// Strava
+	ClientID          string
+	ClientSecret      string
+	RefreshToken      string
+	AccessToken       string
 	StravaVerifyToken string
 }
 
@@ -29,8 +35,19 @@ func main() {
 	apiCfg := apiConfig{
 		MemosApiKey:       os.Getenv("MEMOS_API"),
 		MemosURL:          os.Getenv("MEMOS_URL"),
+		ClientID:          os.Getenv("CLIENT_ID"),
+		ClientSecret:      os.Getenv("CLIENT_SECRET"),
+		RefreshToken:      os.Getenv("REFRESH_TOKEN"),
 		StravaVerifyToken: os.Getenv("VERIFY_TOKEN"),
 	}
+
+	// get strava access token
+	stravaResponse, err := apiCfg.refreshStravaToken()
+	if err != nil {
+		log.Fatal("Could not get strava access token.")
+	}
+
+	apiCfg.AccessToken = stravaResponse.AccessToken
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /strava-webhook", apiCfg.handlerOk)
