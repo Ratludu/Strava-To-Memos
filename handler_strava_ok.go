@@ -19,7 +19,7 @@ type WebhookEvent struct {
 	} `json:"updates"`
 }
 
-func (cfg apiConfig) handlerOk(w http.ResponseWriter, r *http.Request) {
+func (cfg *apiConfig) handlerOk(w http.ResponseWriter, r *http.Request) {
 
 	var event WebhookEvent
 
