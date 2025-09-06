@@ -16,6 +16,7 @@ type apiConfig struct {
 	ClientID          string
 	ClientSecret      string
 	RefreshToken      string
+	SubscriptionID    string
 	AccessToken       string
 	StravaVerifyToken string
 }
@@ -38,16 +39,18 @@ func main() {
 		ClientID:          os.Getenv("CLIENT_ID"),
 		ClientSecret:      os.Getenv("CLIENT_SECRET"),
 		RefreshToken:      os.Getenv("REFRESH_TOKEN"),
+		AccessToken:       os.Getenv("ACCESS_TOKEN"),
 		StravaVerifyToken: os.Getenv("VERIFY_TOKEN"),
+		SubscriptionID:    os.Getenv("SUBCRIPTION_ID"),
 	}
 
-	// get strava access token
-	stravaResponse, err := apiCfg.refreshStravaToken()
+	rToken, err := apiCfg.refreshStravaToken()
 	if err != nil {
-		log.Fatal("Could not get strava access token.")
+		log.Fatal("Could not get token")
+		return
 	}
 
-	apiCfg.AccessToken = stravaResponse.AccessToken
+	apiCfg.AccessToken = rToken.AccessToken
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /strava-webhook", apiCfg.handlerOk)

@@ -3,21 +3,13 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
+	"strconv"
 )
 
-type WebhookEvent struct {
-	AspectType     string `json:"aspect_type"`
-	EventTime      int    `json:"event_time"`
-	ObjectID       int    `json:"object_id"`
-	ObjectType     string `json:"object_type"`
-	OwnerID        int    `json:"owner_id"`
-	SubscriptionID int    `json:"subscription_id"`
-	Updates        struct {
-		Title string `json:"title"`
-	} `json:"updates"`
-}
+const OAuthURL = "https://www.strava.com/api/v3/oauth/token"
 
 func (cfg *apiConfig) handlerOk(w http.ResponseWriter, r *http.Request) {
 
@@ -32,16 +24,64 @@ func (cfg *apiConfig) handlerOk(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	returnString := fmt.Sprintf("This is new activity! (or updated one)\n ObjectID: %d \n ObjectType: %s", event.ObjectID, event.ObjectType)
-
-	payload := MemosPayload{
-		State:      "NORMAL",
-		Content:    returnString,
-		Visibility: "PROTECTED",
+	strSubID, err := strconv.Atoi(cfg.SubscriptionID)
+	if err != nil {
+		log.Printf("Could not convert subscription_id to string: %v", err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
 	}
 
-	go cfg.PostMemo(payload)
+	if strSubID != event.SubscriptionID {
+		log.Print("Request did not have the same SubscriptionID")
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	if event.ObjectType != "activity" {
+		log.Print("Webhook related to athelete data, ignoring")
+		http.Error(w, "Not taking athelete data now", http.StatusBadRequest)
+		return
+	}
+
+	go cfg.activityHandler(&event)
 
 	log.Println("Responding with OK")
 	w.WriteHeader(http.StatusOK)
+}
+
+func (cfg *apiConfig) getActivity(webhook_event *WebhookEvent) (StravaActivity, error) {
+
+	activityURL := fmt.Sprintf("https://www.strava.com/api/v3/activities/%d", webhook_event.ObjectID)
+
+	req, err := http.NewRequest("GET", activityURL, nil)
+	if err != nil {
+		return StravaActivity{}, fmt.Errorf("Error: Could not create request: %v", err)
+	}
+
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Authorization", "Bearer "+cfg.AccessToken)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return StravaActivity{}, fmt.Errorf("Error doing request: %v", err)
+	}
+
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return StravaActivity{}, fmt.Errorf("Error: Could not read body: %v", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return StravaActivity{}, fmt.Errorf("Error: Could not get data, api failed with error code %d", resp.StatusCode)
+	}
+
+	var stravaActivity StravaActivity
+	if err = json.Unmarshal(body, &stravaActivity); err != nil {
+		return StravaActivity{}, fmt.Errorf("Error: Failed to unmarshal strava data: %v", err)
+	}
+
+	return stravaActivity, nil
 }
